@@ -1,0 +1,7 @@
+myvenv/
+sample.jpeg
+.DS_Store
+.idea/
+yolov3.weights
+yolov3.cfg
+yolov3.txt
