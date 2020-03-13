@@ -1,4 +1,6 @@
 import cv2
+import os
+import argparse
 import numpy as np
 
 
@@ -110,6 +112,11 @@ def detection_image(input_image):
     :param input_image: 입력 이미지
     :return: None
     """
+    # check image path
+    if not os.path.exists(input_image):
+        print('[error] File Not Exist! check your file path')
+        return
+
     (net, output_layers) = load_model(weight_path="yolov3.weights", config_path="yolov3.cfg")
     blob_img, original_img = preprocess_input_image(input_image)
     output = forward(net=net, output_layers=output_layers, input_image=blob_img)
@@ -117,4 +124,8 @@ def detection_image(input_image):
 
 
 if __name__ == '__main__':
-    detection_image('sample.jpg')
+    parser = argparse.ArgumentParser(description='Opencv-Yolov3 Object Detection')
+    parser.add_argument('--path', help='테스트 이미지 경로')
+
+    args = parser.parse_args()
+    detection_image(args.path)
