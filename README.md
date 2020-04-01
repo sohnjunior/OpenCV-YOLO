@@ -24,5 +24,6 @@ https://pjreddie.com/darknet/yolo/
 Usage
 --------------- 
 ```
-$ python opencv_yolo.py --path <IMAGE PATH>
+$ python opencv_yolo.py --path [image or dir path] --type [file or dir]
 ```
+> If you want to detect objects on a directory basis, use type 'dir'
