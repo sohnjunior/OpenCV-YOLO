@@ -58,12 +58,14 @@ def forward(net, output_layers, input_image):
     return outs
 
 
-def display_result(outs, input_image):
+def display_result(outs, input_image, store=False, filename=None):
     """
-    입력된 이미지에 인식된 객체들을 표시한다.
+    입력된 이미지에 인식된 객체들을 출력 혹은 저장한다.
 
     :param outs: 인식된 객체들
     :param input_image: 입력 이미지
+    :param store: 저장 여부
+    :param filename: 원본 파일 이름(저장될 파일 이름) - store 시에만 필요하다.
     :return: None
     """
     class_indices = []
@@ -91,18 +93,31 @@ def display_result(outs, input_image):
     # 한 객체에 대해 중복되는 박스들을 지운다
     indexes = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
 
-    font = cv2.FONT_HERSHEY_PLAIN
-    for i in range(len(boxes)):
-        if i in indexes:
-            (x, y, w, h) = boxes[i]
-            label = str(classes[class_indices[i]])
-            color = colors[i]
-            cv2.rectangle(input_image, (x, y), (x + w, y + h), color, 2)
-            cv2.putText(input_image, label, (x, y + 30), font, 2, color, 2)
+    if store:
+        # create 'result' directory if not exist
+        if not os.path.exists('result'):
+            os.makedirs('result')
 
-    cv2.imshow("Image", input_image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        for i in range(len(boxes)):
+            if i in indexes:
+                (x, y, w, h) = boxes[i]
+                src = input_image.copy()
+                crop_img = src[x:x + w, y:y + h]
+                cv2.imwrite('result/' + filename, crop_img)
+
+    else:
+        font = cv2.FONT_HERSHEY_PLAIN
+        for i in range(len(boxes)):
+            if i in indexes:
+                (x, y, w, h) = boxes[i]
+                label = str(classes[class_indices[i]])
+                color = colors[i]
+                cv2.rectangle(input_image, (x, y), (x + w, y + h), color, 2)
+                cv2.putText(input_image, label, (x, y + 30), font, 2, color, 2)
+
+        cv2.imshow("Image", input_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
 def detection_image(input_image):
@@ -123,9 +138,34 @@ def detection_image(input_image):
     display_result(output, input_image=original_img)
 
 
+def detection_directory(dir_path):
+    """
+    디렉토리에 존재하는 모든 이미지들에 대해 객체 검출을 적용시킨 결과를 저장한다.
+
+    :param dir_path: 입력 이미지들이 존재하는 디렉토리 경로
+    :return: None
+    """
+    filenames = os.listdir(dir_path)
+    filenames = list(filter(lambda x: x[0] != '.', filenames))  # .DS_Store 폴더 제외
+
+    (net, output_layers) = load_model(weight_path="yolov3.weights", config_path="yolov3.cfg")
+    for filename in filenames:
+        file_path = dir_path + '/' + filename
+        blob_img, original_img = preprocess_input_image(file_path)
+        output = forward(net=net, output_layers=output_layers, input_image=blob_img)
+        display_result(output, input_image=original_img, store=True, filename=filename)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Opencv-Yolov3 Object Detection')
-    parser.add_argument('--path', help='테스트 이미지 경로')
+    parser.add_argument('--path', help='테스트 이미지 혹은 디렉토리 경로')
+    parser.add_argument('--type', help='테스트 형식')
 
     args = parser.parse_args()
-    detection_image(args.path)
+
+    if args.type == 'dir':
+        detection_directory(args.path)
+    elif args.type == 'file':
+        detection_image(args.path)
+    else:
+        print('unknown type parameter!')
