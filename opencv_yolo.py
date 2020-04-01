@@ -40,7 +40,7 @@ def preprocess_input_image(image_path):
     """
     img = cv2.imread(image_path)
     img = cv2.resize(img, None, fx=0.4, fy=0.4)
-    blob_img = cv2.dnn.blobFromImage(img, 0.00392, (416, 416), (0, 0, 0), swapRB=True, crop=False)
+    blob_img = cv2.dnn.blobFromImage(img, 1 / 255.0, (416, 416), (0, 0, 0), swapRB=True, crop=False)
     return blob_img, img
 
 
@@ -101,10 +101,11 @@ def display_result(outs, input_image, store=False, filename=None):
         for i in range(len(boxes)):
             if i in indexes:
                 (x, y, w, h) = boxes[i]
+                x = max(x, 0)
+                y = max(y, 0)
                 src = input_image.copy()
-                crop_img = src[x:x + w, y:y + h]
+                crop_img = src[y:y + h, x:x + w]
                 cv2.imwrite('result/' + filename, crop_img)
-
     else:
         font = cv2.FONT_HERSHEY_PLAIN
         for i in range(len(boxes)):
